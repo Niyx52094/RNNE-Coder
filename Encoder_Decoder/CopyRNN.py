@@ -65,15 +65,15 @@ class CopyRNN(nn.Module):
     #     ids = torch.arange(0, src_len).unsqueeze(0).expand(batch_size, -1)
     #     mask = ids >= src_length.unsqueeze(1).expand(-1, src_len)
     #     return mask
-    def prepare_for_decode_state(self, src_tokens, src_lengths, src_enc_mask, src_with_ood_ids):
+    def prepare_for_decode_state(self, src_tokens, src_lengths, src_enc_mask, src_with_ood_ids, oov_max_lengths):
 
         encoder_ouputs, encoder_hidden_state = self.encoder(src_tokens, src_lengths)
-        state = GRUCopyState(encoder_ouputs, src_enc_mask, src_with_ood_ids, encoder_hidden_state)
+        state = GRUCopyState(encoder_ouputs, src_enc_mask, src_with_ood_ids, encoder_hidden_state, oov_max_lengths)
         return state
 
     def forward(self, src_tokens, src_lengths, src_enc_mask, src_with_ood_ids, oov_max_lengths,decode_inputs):
 
-        state = self.prepare_for_decode_state(src_tokens, src_lengths, src_enc_mask, src_with_ood_ids)
+        state = self.prepare_for_decode_state(src_tokens, src_lengths, src_enc_mask, src_with_ood_ids,oov_max_lengths)
         state.input_feed = self.encoder_to_decoder_init_state_1(state.input_feed.squeeze(0)).unsqueeze(0)
         state.hidden = self.encoder_to_decoder_init_state_2(state.hidden.squeeze(0)).unsqueeze(0)
         # # [Src_len, B, H]
@@ -82,7 +82,7 @@ class CopyRNN(nn.Module):
         # self.decoder.init_state(encoder_ouputs.size(1))
         # decoder_input, encoder_outputs, encoder_mask, extra_vocab_size, encoder_token_with_oov
 
-        final_dist = self.decoder(decode_inputs,oov_max_lengths, state)
+        final_dist = self.decoder(decode_inputs, state)
 
         return final_dist
 
@@ -153,13 +153,14 @@ class CopyRnnDecoder(nn.Module):
     def prepare_for_decode(self, ):
         pass
 
-    def forward(self, decoder_input,  extra_vocab_size, state):
+    def forward(self, decoder_input, state):
         '''
         :param decoder_input: [B, Tgt_len]
-        :param encoder_outputs: [Src_len, B, H]
-        :param encoder_mask: [B, Src_len]
-        :param extra_vocab_size:  max_extra_length, in a Batch, int
-        :param encoder_token_with_oov:  [B, Src_len]
+        what state includes:
+            :param encoder_outputs: [Src_len, B, H]
+            :param encoder_mask: [B, Src_len]
+            :param extra_vocab_size:  max_extra_length, in a Batch, int
+            :param encoder_token_with_oov:  [B, Src_len]
         :return:
         '''
 

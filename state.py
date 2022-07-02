@@ -68,7 +68,7 @@ class State:
 
 
 class GRUCopyState(State):
-    def __init__(self, encoder_output, encoder_mask, encoder_token_with_oov, hidden):
+    def __init__(self, encoder_output, encoder_mask, encoder_token_with_oov, hidden,extra_vocab_size):
         """
         GRUDecoder对应的State，保存encoder的输出以及GRU解码过程中的一些中间状态
 
@@ -76,12 +76,17 @@ class GRUCopyState(State):
         :param torch.BoolTensor encoder_mask: bsz x src_seq_len, 为0的地方是padding
         :param torch.FloatTensor hidden: num_layers x bsz x hidden_size, 上个时刻的hidden状态
         :param torch.FloatTensor hidden: num_layers x bsz x hidden_size, 上个时刻的hidden状态
-        :param torch.LongTensor hidden: [B, src_len]
+        :param torch.LongTensor encoder_token_with_oov: [B, src_len]
+        :param torch.LongTensor extra_vocab_size: int
         """
         super().__init__(encoder_output, encoder_mask)
         self._hidden = hidden
         self._input_feed = hidden[0]  # 默认是上一个时刻的输出
         self.encoder_token_with_oov = encoder_token_with_oov
+        self.extra_vocab_size = extra_vocab_size
+    @property
+    def extra_vacab_size(self):
+        return self.extra_vocab_size
 
     @property
     def input_feed(self):
@@ -119,6 +124,26 @@ class GRUCopyState(State):
 
         if self._input_feed is not None:
             self._input_feed = self._reorder_state(self._input_feed, indices, dim=1)
+
+
+class BartCopyState(State):
+    def __init__(self, encoder_output, encoder_mask, encoder_token_with_oov,extra_vocab_size):
+        """
+        BartDecoder对应的State，保存encoder的输出以及GRU解码过程中的一些中间状态
+        :param torch.FloatTensor encoder_output: bsz x src_seq_len x encode_output_size，encoder的输出
+        :param torch.BoolTensor encoder_mask: bsz x src_seq_len, 为0的地方是padding
+        :param torch.LongTensor encoder_token_with_oov: [B, src_len]
+        """
+        super().__init__(encoder_output, encoder_mask)
+        self.encoder_token_with_oov = encoder_token_with_oov
+        self.extra_vocab_size = extra_vocab_size
+
+
+    def reorder_state(self, indices: torch.LongTensor):
+        super().reorder_state(indices)
+        if self.encoder_token_with_oov is not None:
+            self.encoder_token_with_oov = self._reorder_state(self.encoder_token_with_oov, indices, dim=1)
+
 
 
 
