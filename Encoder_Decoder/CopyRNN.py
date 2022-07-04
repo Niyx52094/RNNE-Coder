@@ -167,6 +167,7 @@ class CopyRnnDecoder(nn.Module):
         encoder_outputs = state.encoder_output
         encoder_mask = state.encoder_mask
         encoder_token_with_oov = state.encoder_token_with_oov
+        extra_vocab_size = state.extra_vocab_size
 
         encoder_max_len, batch_size1, hidden_size = list(encoder_outputs.size())
         batch_size2, decoder_input_max_len = list(decoder_input.size())
