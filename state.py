@@ -131,7 +131,7 @@ class BartCopyState(State):
         """
         BartDecoder对应的State，保存encoder的输出以及GRU解码过程中的一些中间状态
         :param torch.FloatTensor encoder_output: bsz x src_seq_len x encode_output_size，encoder的输出
-        :param torch.BoolTensor encoder_mask: bsz x src_seq_len, 为0的地方是padding
+        :param torch.BoolTensor encoder_mask: [B, src_len], 为0的地方是padding
         :param torch.LongTensor encoder_token_with_oov: [B, src_len]
         """
         super().__init__(encoder_output, encoder_mask)
